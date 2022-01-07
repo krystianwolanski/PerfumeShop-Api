@@ -10,6 +10,7 @@ using FragranceShopApi.Models.PerfumeBrand;
 using FragranceShopApi.Models.PerfumeImage;
 using FragranceShopApi.Models.Perfumer;
 using FragranceShopApi.Models.PerfumeReview;
+using FragranceShopApi.Models.User;
 
 namespace FragranceShopApi.Mapper
 {
@@ -20,7 +21,11 @@ namespace FragranceShopApi.Mapper
             #region Account
             CreateMap<RegisterUserDto, User>()
                 .ForMember(u => u.PasswordHash, o => o.Ignore());
-           #endregion
+            #endregion
+
+            #region User
+            CreateMap<UpdateUserDto, User>();
+            #endregion
 
             #region Perfumer
             CreateMap<CreatePerfumerDto, Perfumer>();

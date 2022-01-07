@@ -5,6 +5,7 @@ using Data.Models.EntityHelpers;
 using FragranceShopApi.Extensions;
 using FragranceShopApi.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System;
 using System.Linq;
 
@@ -19,6 +20,9 @@ namespace FragranceShopApi
             IUserContextService userContextService) : base(options)
         {
             _userContextService = userContextService;
+
+            ChangeTracker.Tracked += OnEntityTracked;
+            ChangeTracker.StateChanged += OnEntityStateChanged;
         }
 
         public DbSet<Perfume> Perfumes { get; set; }
@@ -35,25 +39,22 @@ namespace FragranceShopApi
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderElement> OrderElements { get; set; }
 
-        public override int SaveChanges()
+        private void OnEntityTracked(object sender, EntityTrackedEventArgs e)
         {
-            foreach (var entry in ChangeTracker.Entries<Auditable>())
+            if (!e.FromQuery && e.Entry.State == EntityState.Added && e.Entry.Entity is Auditable entity)
             {
-                switch (entry.State)
-                {
-                    case EntityState.Added:
-                        entry.Entity.CreatedById = _userContextService.User.GetUserId();
-                        entry.Entity.DateCreated = DateTime.Now;
-                        break;
-
-                    case EntityState.Modified:
-                        entry.Entity.LastModifiedById = _userContextService.User.GetUserId();
-                        entry.Entity.LastModifiedDate = DateTime.Now;
-                        break;
-                }
+                entity.CreatedById = _userContextService.User.GetUserId();
+                entity.DateCreated = DateTime.Now;
             }
+        }
 
-            return base.SaveChanges();
+        private void OnEntityStateChanged(object sender, EntityStateChangedEventArgs e)
+        {
+            if (e.NewState == EntityState.Modified && e.Entry.Entity is Modifiable entity)
+            {
+                entity.LastModifiedById = _userContextService.User.GetUserId();
+                entity.LastModifiedDate = DateTime.Now;
+            }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
